@@ -187,6 +187,28 @@ class TestFileOperations:
             assert "Donor1" in donor_names
             assert "Donor2" in donor_names
             mock_warning.assert_called_once()
+    def test_read_input_non_matching_index(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+
+
+            # Create test data with non-matching index
+            data = {"tpm": [1.5, 2.0, 3.5]}
+            df = pd.DataFrame(data)
+            df.index = ["geneA", "geneB", "geneC"]  # Non-numeric index
+            df.index.name = "gene_id"
+            df.to_csv(temp_path / "Donor1-sample.tsv", sep="\t")
+
+            data2 = {"tpm": [4.5, 5.0, 6.5]}
+            df2 = pd.DataFrame(data2)
+            df2.index = ["geneB", "geneC", "geneD"]  # Non-matching index
+            df2.index.name = "gene_id"
+            df2.to_csv(temp_path / "Donor2-sample.tsv", sep="\t")
+            result_data, donor_names = read_all_input_files(temp_path)
+            expected = np.array([[1.5, np.nan], [2.0, 4.5], [3.5, 5.0], [np.nan, 6.5]]).T
+            np.testing.assert_array_equal(result_data, expected) # assert equal (allowing nans to match)
+            assert donor_names == ["Donor1", "Donor2"]
+        
 
     def test_read_all_files_no_files(self):
         """Edge case where no files are found"""
