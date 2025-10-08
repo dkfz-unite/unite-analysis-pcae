@@ -20,6 +20,11 @@ class Imputer(Protocol):
     def fit_transform(self, X: np.ndarray) -> np.ndarray: ...
 
 
+# class MySimpleImputer(SimpleImputer):
+#     def fit(X):
+#         # filter any features with fewer than 2
+
+
 class NullImputer:
     # a null imputer that does nothing
     def fit(self, X: np.ndarray) -> None:
@@ -65,6 +70,12 @@ def scale_cols(ar: np.ndarray) -> np.ndarray:
     # Scale each column to have mean 0 and variance 1
     means = np.mean(ar, axis=0)
     stds = np.std(ar, axis=0)
+    # check if standard deviation is nonzero
+    if any(stds == 0.0):
+        raise ValueError(
+            "Data could not be scaled due to zero variances being found. "
+            "This indicates that all expression values of at least one gene are equal"
+        )
     return (ar - means) / stds
 
 
@@ -125,6 +136,9 @@ def read_all_input_files(root_path: Path) -> Tuple[np.ndarray, List[str]]:
         df = read_input_file(file_path)
         data_frames.append(df)
         donor_names.append(match.group(1))
+
+    if len(data_frames) == 0:
+        raise ValueError(f"No files found matching {pattern}")
     # merge all the data frames so that the index is the union of all gene_ids
     merged_df = pd.concat(data_frames, axis=1, join="outer")
     # convert to numpy array and transpose so that rows are samples and columns are genes
@@ -150,7 +164,7 @@ def prepare_data(ar: np.ndarray, opts: Options) -> np.ndarray:
     ar = np.log1p(ar)
     # impute missing values if requested
     ar = imputer.fit_transform(ar)
-    print("After imputation:", ar)
+
     # if any missing values remain this indicates a bug
     assert not np.isnan(ar).any(), "Missing values at this stage indicates a bug"
     # scale features if requested

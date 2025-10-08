@@ -188,6 +188,14 @@ class TestFileOperations:
             assert "Donor2" in donor_names
             mock_warning.assert_called_once()
 
+    def test_read_all_files_no_files(self):
+        """Edge case where no files are found"""
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+            with pytest.raises(ValueError, match="No files found matching"):
+                result_data, donor_names = read_all_input_files(temp_path)
+
     def test_read_options(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_path = Path(temp_dir)
@@ -238,6 +246,30 @@ class TestDataProcessing:
         # Should have same shape (no gene deletion) and no NaNs
         assert result.shape[1] == data.shape[1]
         assert not np.isnan(result).any()
+
+    @pytest.mark.parametrize(
+        "data",
+        [np.array([[1.0, 2.0, 3.0], [4.0, np.nan, 6.0]]), np.array([[1.0, 2.0, 3.0]])],
+    )
+    @pytest.mark.parametrize(
+        "handle_missing_values",
+        [
+            option.value
+            for option in HandleMissingValuesOptions
+            if option != HandleMissingValuesOptions.GENEWISE_DELETION
+        ],
+    )
+    @pytest.mark.parametrize("scale_features", [True])
+    def test_prepare_data_with_very_few_unique_data_points_with_scaling(
+        self, data, handle_missing_values, scale_features
+    ):
+        opts = Options(
+            handle_missing_values=handle_missing_values,
+            scale_features=scale_features,
+        )
+
+        with pytest.raises(ValueError, match="Data could not be scaled"):
+            result = prepare_data(data, opts)
 
     def test_do_pca(self):
         # Create test data
