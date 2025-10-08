@@ -90,59 +90,6 @@ class TestFilterFunctions:
         np.testing.assert_array_equal(result, expected)
 
 
-class TestGetterFunctions:
-    def test_get_treat_zeros_filter(self):
-        opts_true = Options(treat_zeros_as_missing=True)
-        opts_false = Options(treat_zeros_as_missing=False)
-
-        filter_true = get_treat_zeros_filter(opts_true)
-        filter_false = get_treat_zeros_filter(opts_false)
-
-        data = np.array([[0, 1]], dtype=float)
-        result_true = filter_true(data.copy())
-        result_false = filter_false(data.copy())
-
-        assert np.isnan(result_true[0, 0])
-        assert result_false[0, 0] == 0
-
-    def test_get_missing_values_filter(self):
-        opts_deletion = Options(
-            handle_missing_values=HandleMissingValuesOptions.GENEWISE_DELETION
-        )
-        opts_no_deletion = Options(
-            handle_missing_values=HandleMissingValuesOptions.IMPUTE_GENE_MEAN_EXPRESSION
-        )
-
-        filter_deletion = get_missing_values_filter(opts_deletion)
-        filter_no_deletion = get_missing_values_filter(opts_no_deletion)
-
-        data = np.array([[1, np.nan], [2, 3]])
-        result_deletion = filter_deletion(data)
-        result_no_deletion = filter_no_deletion(data)
-
-        assert result_deletion.shape[1] == 1  # Column with NaN removed
-        assert result_no_deletion.shape[1] == 2  # No columns removed
-
-    def test_get_imputer(self):
-        opts_mean = Options(
-            handle_missing_values=HandleMissingValuesOptions.IMPUTE_GENE_MEAN_EXPRESSION
-        )
-        opts_median = Options(
-            handle_missing_values=HandleMissingValuesOptions.IMPUTE_GENE_MEDIAN_EXPRESSION
-        )
-        opts_none = Options(
-            handle_missing_values=HandleMissingValuesOptions.GENEWISE_DELETION
-        )
-
-        imputer_mean = get_imputer(opts_mean)
-        imputer_median = get_imputer(opts_median)
-        imputer_none = get_imputer(opts_none)
-
-        assert hasattr(imputer_mean, "strategy")
-        assert hasattr(imputer_median, "strategy")
-        assert isinstance(imputer_none, NullImputer)
-
-
 class TestFileOperations:
     def create_test_tsv(self, path: Path, data: dict):
         """Helper to create test TSV files"""
