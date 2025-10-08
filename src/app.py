@@ -19,12 +19,6 @@ class Imputer(Protocol):
     def transform(self, X: np.ndarray) -> np.ndarray: ...
     def fit_transform(self, X: np.ndarray) -> np.ndarray: ...
 
-
-# class MySimpleImputer(SimpleImputer):
-#     def fit(X):
-#         # filter any features with fewer than 2
-
-
 class NullImputer:
     # a null imputer that does nothing
     def fit(self, X: np.ndarray) -> None:
@@ -44,6 +38,7 @@ class HandleMissingValuesOptions(StrEnum):
 
 
 class Options(BaseModel):
+    # pydantic validator object for options.json
     treat_zeros_as_missing: bool = Field(
         default=False, description="If true, zeros are treated as missing values (NaN)."
     )
@@ -63,6 +58,7 @@ def set_zeros_to_nan(ar: np.ndarray) -> np.ndarray:
 
 
 def no_filter(ar: np.ndarray) -> np.ndarray:
+    # a null filter that does nothing
     return ar
 
 
